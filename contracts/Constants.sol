@@ -72,6 +72,7 @@ abstract contract Constants {
     uint internal constant MODULEID__IRM_ZERO = 2_000_001;
     uint internal constant MODULEID__IRM_FIXED = 2_000_002;
     uint internal constant MODULEID__IRM_LINEAR = 2_000_100;
+    uint internal constant MODULEID__IRM_LIDO = 2_000_004;
     //   Classes
     uint internal constant MODULEID__IRM_CLASS__STABLE = 2_000_500;
     uint internal constant MODULEID__IRM_CLASS__MAJOR = 2_000_501;
