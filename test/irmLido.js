@@ -4,7 +4,6 @@ const A_DAY = 86400
 const START_BLOCK = 14707000
 const LIDO_SPY_AT_14707000 = et.BN('1270366590784250048')
 const LIDO_SPY_CUSTOM_1 = et.BN('1000000000000000000')
-const LIDO_SPY_CUSTOM_2 = et.BN('-1000000000000000000')
 
 const LIDO_ORACLE_ADDRESS = '0x442af784A788A5bd6F42A01Ebe9F287a871243fb'
 const POST_COMPLETED_TOTAL_POOLED_ETHER_POSITION = '0xaa8433b13d2b111d4f84f6f374bc7acbe20794944308876aa250fa9a73dc7f53'
@@ -85,12 +84,12 @@ et.testSet({
         // 0% utilisation
         { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [apy(0), 1e-5], },
 
-        // the smallest possible non-zero utilisation
-        { send: 'dTokens.dUSDT.borrow', args: [0, 1], },
+        // very small non-zero utilisation
+        { send: 'dTokens.dUSDT.borrow', args: [0, 25], },
         { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [LIDO_SPY_AT_14707000, 1e-5], },
 
         // 25% utilisation
-        { send: 'dTokens.dUSDT.borrow', args: [0, et.units(25_000, 6).sub(1)], },
+        { send: 'dTokens.dUSDT.borrow', args: [0, et.units(25_000, 6).sub(25)], },
         { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [LIDO_SPY_AT_14707000.add(apy(apyInterpolate(.1, .5))), 1e-5], },
 
         // repay, withdraw and deposit again before time jump not to have utilisation ratio screwed due to interest accrual
@@ -143,6 +142,7 @@ et.testSet({
         { action: 'cb', cb: async () => {
             // SPY = 1e27 * (post - pre) / (pre * elapsed)
             // the following will correspond to SPY = -1e18 
+            // however the negative rebases are not supported hence the offset will be 0
             setLidoOracleStorage(ctx, '999500000000000000000000', '1000000000000000000000000', '500000')
 
             // jump a bit more as it's not accurate
@@ -152,25 +152,21 @@ et.testSet({
         // 0% utilisation
         { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [apy(0), 1e-5], },
 
-        // the smallest possible non-zero utilisation
-        { send: 'dTokens.dUSDT.borrow', args: [0, 1], },
-        { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [LIDO_SPY_CUSTOM_2, 1e-5], },
-
         // 25% utilisation
-        { send: 'dTokens.dUSDT.borrow', args: [0, et.units(25_000, 6).sub(1)], },
-        { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [LIDO_SPY_CUSTOM_2.add(apy(apyInterpolate(.1, .5))), 1e-5], },
+        { send: 'dTokens.dUSDT.borrow', args: [0, et.units(25_000, 6)], },
+        { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [apy(apyInterpolate(.1, .5)), 1e-5], },
 
         // 50% utilisation
         { send: 'dTokens.dUSDT.borrow', args: [0, et.units(25_000, 6)], },
-        { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [LIDO_SPY_CUSTOM_2.add(apy(.1)), 1e-5], },
+        { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [apy(.1), 1e-5], },
 
         // 75% utilisation
         { send: 'dTokens.dUSDT.borrow', args: [0, et.units(25_000, 6)], },
-        { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [LIDO_SPY_CUSTOM_2.add(apy(3).sub(apy(.1)).div(2).add(apy(.1))), 1e-5], },
+        { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [apy(3).sub(apy(.1)).div(2).add(apy(.1)), 1e-5], },
 
         // 100% utilisation
         { send: 'dTokens.dUSDT.borrow', args: [0, et.units(25_000, 6)], },
-        { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [LIDO_SPY_CUSTOM_2.add(apy(3)), 1e-4], },
+        { call: 'markets.interestRate', args: [ctx.contracts.tokens.USDT.address], equals: [apy(3), 1e-4], },
     ],
 })
 

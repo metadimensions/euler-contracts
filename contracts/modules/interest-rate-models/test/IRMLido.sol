@@ -30,7 +30,7 @@ contract IRMLido is BaseIRM {
     }
 
     function computeInterestRateImpl(address, uint32 utilisation) internal override returns (int96) {
-        int ir = 0;
+        uint ir = 0;
         if (utilisation > 0) {
             IRMLidoStorage storage irmLido;
             {
@@ -43,27 +43,29 @@ contract IRMLido is BaseIRM {
             
                 if (success) {
                     (uint postTotalPooledEther, uint preTotalPooledEther, uint timeElapsed) = abi.decode(data, (uint, uint, uint));
-                    int baseRate = 1e27 * (int(postTotalPooledEther) - int(preTotalPooledEther)) / int(preTotalPooledEther * timeElapsed);
                     
-                    // reflect Lido's 10% reward fee
-                    //if (baseRate > 0) {
-                    //    baseRate = baseRate * 9 / 10;
-                    //}
+                    // do not support negative rebases
+                    uint baseRate = preTotalPooledEther >= postTotalPooledEther
+                        ? 0 
+                        : 1e27 * (postTotalPooledEther - preTotalPooledEther) / (preTotalPooledEther * timeElapsed);
 
-                    irmLido.baseRate = int96(baseRate);
+                    // reflect Lido's 10% reward fee
+                    //baseRate = baseRate * 9 / 10;
+
+                    irmLido.baseRate = int96(int(baseRate));
                     irmLido.lastCalled = uint64(block.timestamp);
                 }
             }
-            ir = irmLido.baseRate;
+            ir = uint(int(irmLido.baseRate));
         }
         
         if (utilisation <= kink) {
-            ir += int(utilisation * slope1);
+            ir += utilisation * slope1;
         } else {
-            ir += int(kink * slope1);
-            ir += int(slope2 * (utilisation - kink));
+            ir += kink * slope1;
+            ir += slope2 * (utilisation - kink);
         }
 
-        return int96(ir);
+        return int96(int(ir));
     }
 }
