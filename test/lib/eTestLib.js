@@ -38,6 +38,7 @@ const moduleIds = {
     IRM_ZERO: 2000001,
     IRM_FIXED: 2000002,
     IRM_LINEAR: 2000100,
+    IRM_LIDO: 2000004,
 };
 
 
@@ -65,6 +66,7 @@ const contractNames = [
     'IRMZero',
     'IRMFixed',
     'IRMLinear',
+    'IRMLido',
 
     // Adaptors
 
@@ -792,6 +794,11 @@ async function deployContracts(provider, wallets, tokenSetupName) {
         ctx.contracts.modules.irmZero = await (await ctx.factories.IRMZero.deploy(gitCommit)).deployed();
         ctx.contracts.modules.irmFixed = await (await ctx.factories.IRMFixed.deploy(gitCommit)).deployed();
         ctx.contracts.modules.irmLinear = await (await ctx.factories.IRMLinear.deploy(gitCommit)).deployed();
+
+        // IRMLido only in fork mode
+        if(ctx.tokenSetup.testing.forkTokens) {
+            ctx.contracts.modules.irmLido = await (await ctx.factories.IRMLido.deploy(gitCommit)).deployed();
+        }
     }
 
 
@@ -821,11 +828,17 @@ async function deployContracts(provider, wallets, tokenSetupName) {
             'irmDefault',
         ];
 
-        if (ctx.tokenSetup.testing) modulesToInstall.push(
-            'irmZero',
-            'irmFixed',
-            'irmLinear',
-        );
+        if (ctx.tokenSetup.testing) {
+            modulesToInstall.push(
+                'irmZero',
+                'irmFixed',
+                'irmLinear',
+            );
+
+            if(ctx.tokenSetup.testing.forkTokens) {
+                modulesToInstall.push('irmLido')
+            }
+        }
 
         let moduleAddrs = modulesToInstall.map(m => ctx.contracts.modules[m].address);
 
